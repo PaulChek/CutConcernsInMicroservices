@@ -40,6 +40,13 @@ services:
       - "27017:27017"
     volumes:
       - mongo_disk:/data/db
+    #healthcheck:
+    #  test:  ["CMD", "mongo", "--eval", "db.runCommand(\"ping\").ok' localhost:27017/test --quiet 1"]
+    #  interval: 1m30s
+    #  timeout: 10s
+    #  retries: 3
+    #  start_period: 40s
+
 #APIs
   customers:
     container_name: customer.api
