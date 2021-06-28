@@ -1,0 +1,80 @@
+version: '3.9'
+
+services:
+#third party
+  elasticsearch:
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    volumes:
+      - elastic_disc:/usr/share/elasticsearch/data
+    
+  kibana:
+   container_name: kibana
+   ports:
+     - 5601:5601
+   environment:
+     ELASTICSEARCH_URL: http://elasticsearch:9200
+     ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+
+  rabbitmq:
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+#DBs
+  customerdb:
+    container_name: customer_db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_disk:/data/db
+#APIs
+  customers:
+    container_name: customer.api
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MongoSettings:Host=mongodb://customerdb:27017
+      - MassTransit:Host=rabbitmq
+      - ElasticUrl=http://elasticsearch:9200
+    depends_on:
+      - customerdb
+      - rabbitmq
+      - elasticsearch
+    ports:
+      - "8000:80"
+
+  cart:
+    container_name: cart.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MassTransitSettings:Host=rabbitmq
+      - MongoSettings:Host=mongodb://customerdb:27017
+      - ElasticUrl=http://elasticsearch:9200
+    restart: always
+    depends_on:
+      - customerdb
+      - rabbitmq
+      - elasticsearch
+    ports:
+      - "8001:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthcheck"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+   
+    
