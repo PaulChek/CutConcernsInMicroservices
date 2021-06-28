@@ -50,9 +50,12 @@ services:
       - MassTransit:Host=rabbitmq
       - ElasticUrl=http://elasticsearch:9200
     depends_on:
-      - customerdb
-      - rabbitmq
-      - elasticsearch
+      elasticsearch:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      customerdb:
+        condition: service_started
     ports:
       - "8000:80"
 
@@ -65,9 +68,8 @@ services:
       - ElasticUrl=http://elasticsearch:9200
     restart: always
     depends_on:
-      - customerdb
-      - rabbitmq
-      - elasticsearch
+      customers:
+        condition: service_started
     ports:
       - "8001:80"
     healthcheck:
